@@ -1,0 +1,45 @@
+{
+  "name": "worder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Worder cleans, structures, previews, and exports large language model outputs.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tailwindcss/typography": "latest",
+    "docx": "latest",
+    "file-saver": "latest",
+    "highlight.js": "latest",
+    "html2pdf.js": "latest",
+    "katex": "latest",
+    "lucide-react": "latest",
+    "marked": "latest",
+    "next": "latest",
+    "pptxgenjs": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-markdown": "latest",
+    "rehype-highlight": "latest",
+    "rehype-katex": "latest",
+    "remark-gfm": "latest",
+    "remark-math": "latest"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "latest",
+    "@testing-library/react": "latest",
+    "@types/file-saver": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "latest",
+    "postcss": "latest",
+    "tailwindcss": "^3.4.17",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
