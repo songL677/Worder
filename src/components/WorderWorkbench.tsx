@@ -18,11 +18,13 @@ import {
   Table2,
   Wand2
 } from "lucide-react";
+import { saveAs } from "file-saver";
 import { cleanMarkdown } from "@/lib/cleaning/cleanMarkdown";
-import { exportMarkdownToDocx } from "@/lib/exporters/docxExporter";
-import { exportElementToPdf } from "@/lib/exporters/pdfExporter";
-import { markdownToSlides } from "@/features/ppter/outline";
-import { exportSlidesToPptx } from "@/features/ppter/pptxExporter";
+import { wordExporter } from "@/lib/exporters/word/wordExporter";
+import { pdfExporter } from "@/lib/exporters/pdf/html2pdfExporter";
+import { pptExporter } from "@/lib/exporters/ppt/pptExporter";
+import { astToSlides } from "@/features/ppter/astToSlides";
+import { copyRichTextToClipboard, copyTextToClipboard } from "@/lib/clipboard/copy";
 import type { CleanMode } from "@/types/document";
 import { MarkdownPreview } from "./MarkdownPreview";
 
@@ -54,10 +56,6 @@ def predict(x, w, b):
 \`\`\`
 `;
 
-async function copyToClipboard(text: string) {
-  await navigator.clipboard.writeText(text);
-}
-
 function countMatches(value: string, pattern: RegExp): number {
   return value.match(pattern)?.length ?? 0;
 }
@@ -83,10 +81,11 @@ export function WorderWorkbench() {
   const [mode, setMode] = useState<CleanMode>("structure");
   const [copied, setCopied] = useState<string | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const cleaned = useMemo(() => cleanMarkdown(rawText, { mode }), [rawText, mode]);
-  const slides = useMemo(() => markdownToSlides(cleaned.markdown), [cleaned.markdown]);
+  const slides = useMemo(() => astToSlides(cleaned.document), [cleaned.document]);
   const stats = useMemo(
     () => analyzeMarkdown(cleaned.markdown, rawText.length),
     [cleaned.markdown, rawText.length]
@@ -102,58 +101,112 @@ export function WorderWorkbench() {
 
   const markCopied = (kind: string) => {
     setCopied(kind);
+    setNotice({ type: "success", text: "内容已复制到剪贴板。" });
     window.setTimeout(() => setCopied(null), 1400);
+    window.setTimeout(() => setNotice(null), 1800);
+  };
+
+  const showError = (text: string) => {
+    setNotice({ type: "error", text });
+  };
+
+  const hasContent = () => {
+    if (!rawText.trim()) {
+      showError("请输入或粘贴内容后再执行操作。");
+      return false;
+    }
+    return true;
   };
 
   const handleCopyMarkdown = async () => {
-    await copyToClipboard(cleaned.markdown);
-    markCopied("markdown");
+    if (!hasContent()) {
+      return;
+    }
+    try {
+      await copyTextToClipboard(cleaned.markdown);
+      markCopied("markdown");
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "复制 Markdown 失败。");
+    }
   };
 
   const handleCopyPlain = async () => {
-    await copyToClipboard(cleaned.plainText);
-    markCopied("plain");
+    if (!hasContent()) {
+      return;
+    }
+    try {
+      await copyTextToClipboard(cleaned.plainText);
+      markCopied("plain");
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "复制纯文本失败。");
+    }
   };
 
   const handleCopyRich = async () => {
-    if (!previewRef.current || !navigator.clipboard.write) {
-      await handleCopyMarkdown();
+    if (!hasContent()) {
       return;
     }
-    const html = previewRef.current.innerHTML;
-    const item = new ClipboardItem({
-      "text/html": new Blob([html], { type: "text/html" }),
-      "text/plain": new Blob([cleaned.plainText], { type: "text/plain" })
-    });
-    await navigator.clipboard.write([item]);
-    markCopied("rich");
+    try {
+      if (!previewRef.current) {
+        throw new Error("无法找到预览区域，请改用 Markdown 复制。");
+      }
+      await copyRichTextToClipboard(previewRef.current.innerHTML, cleaned.plainText);
+      markCopied("rich");
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "复制富文本失败。");
+    }
   };
 
   const handleDocx = async () => {
+    if (!hasContent()) {
+      return;
+    }
     setExporting("docx");
     try {
-      await exportMarkdownToDocx(cleaned.markdown, "worder-document.docx");
+      const blob = await wordExporter.export(cleaned.document);
+      if (blob instanceof Blob) {
+        saveAs(blob, "worder-document.docx");
+      }
+      setNotice({ type: "success", text: "Word 文件已生成。" });
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "导出 Word 失败。");
     } finally {
       setExporting(null);
     }
   };
 
   const handlePdf = async () => {
+    if (!hasContent()) {
+      return;
+    }
     if (!previewRef.current) {
+      showError("无法找到预览区域，PDF 导出失败。");
       return;
     }
     setExporting("pdf");
     try {
-      await exportElementToPdf(previewRef.current, "worder-document.pdf");
+      await pdfExporter.export(cleaned.document, {
+        element: previewRef.current,
+        fileName: "worder-document.pdf"
+      });
+      setNotice({ type: "success", text: "PDF 文件已生成。" });
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "导出 PDF 失败。");
     } finally {
       setExporting(null);
     }
   };
 
   const handlePptx = async () => {
+    if (!hasContent()) {
+      return;
+    }
     setExporting("pptx");
     try {
-      await exportSlidesToPptx(slides, "worder-slides.pptx");
+      await pptExporter.export(cleaned.document);
+      setNotice({ type: "success", text: "PPTX 文件已生成。" });
+    } catch (error) {
+      showError(error instanceof Error ? error.message : "导出 PPTX 失败。");
     } finally {
       setExporting(null);
     }
@@ -196,6 +249,18 @@ export function WorderWorkbench() {
             </div>
           </div>
         </header>
+
+        {notice ? (
+          <div
+            className={`no-print rounded-md border px-4 py-3 text-sm shadow-sm ${
+              notice.type === "error"
+                ? "border-red-200 bg-red-50 text-red-800"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}
+          >
+            {notice.text}
+          </div>
+        ) : null}
 
         <section className="no-print grid gap-3 xl:grid-cols-[1fr_420px]">
           <div className="rounded-md border border-line bg-white/92 p-3 shadow-sm">

@@ -12,6 +12,9 @@ import {
   WidthType
 } from "docx";
 import { saveAs } from "file-saver";
+import type { WorderDocument } from "@/core/ast/types";
+import { markdownToAst } from "@/core/parser/markdownToAst";
+import { astToMarkdown } from "@/core/renderer/astToMarkdown";
 import { lexMarkdown, stripMarkdownInline } from "./markdownTokens";
 
 const headingMap = [
@@ -86,7 +89,7 @@ function addListItems(children: (Paragraph | Table)[], items: any[], ordered: bo
   }
 }
 
-export async function exportMarkdownToDocx(markdown: string, fileName = "worder-document.docx") {
+function markdownToDocxDocument(markdown: string): Document {
   const children: (Paragraph | Table)[] = [];
   const tokens = lexMarkdown(markdown);
 
@@ -100,6 +103,11 @@ export async function exportMarkdownToDocx(markdown: string, fileName = "worder-
         })
       );
     } else if (token.type === "paragraph") {
+      // Formula fallback policy for Word export:
+      // 1. Preserve LaTeX source text without mangling.
+      // 2. Future: convert LaTeX -> MathML / Office Math where reliable.
+      // 3. Future: render formula images for complex equations.
+      // The current MVP prioritizes "not garbled, not lost" over imperfect Office Math conversion.
       children.push(paragraph(stripMarkdownInline(token.text)));
     } else if (token.type === "space") {
       children.push(new Paragraph({ text: "" }));
@@ -119,7 +127,7 @@ export async function exportMarkdownToDocx(markdown: string, fileName = "worder-
     }
   }
 
-  const doc = new Document({
+  return new Document({
     numbering: {
       config: [
         {
@@ -144,7 +152,26 @@ export async function exportMarkdownToDocx(markdown: string, fileName = "worder-
       }
     ]
   });
+}
 
-  const blob = await Packer.toBlob(doc);
+export async function createDocxBlobFromMarkdown(markdown: string): Promise<Blob> {
+  return Packer.toBlob(markdownToDocxDocument(markdown));
+}
+
+export async function exportDocumentToDocxBlob(document: WorderDocument): Promise<Blob> {
+  return createDocxBlobFromMarkdown(astToMarkdown(document));
+}
+
+export async function exportMarkdownToDocx(markdown: string, fileName = "worder-document.docx") {
+  const blob = await createDocxBlobFromMarkdown(markdown);
   saveAs(blob, fileName);
+}
+
+export async function exportDocumentToDocx(document: WorderDocument, fileName = "worder-document.docx") {
+  const blob = await exportDocumentToDocxBlob(document);
+  saveAs(blob, fileName);
+}
+
+export async function exportRawMarkdownToDocx(markdown: string, fileName = "worder-document.docx") {
+  return exportDocumentToDocx(markdownToAst(markdown), fileName);
 }

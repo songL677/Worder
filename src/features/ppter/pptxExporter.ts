@@ -1,5 +1,5 @@
 import pptxgen from "pptxgenjs";
-import type { Slide } from "@/types/document";
+import type { Slide } from "./types";
 
 export async function exportSlidesToPptx(slides: Slide[], fileName = "worder-slides.pptx") {
   const pptx = new pptxgen();

@@ -1,3 +1,5 @@
+import type { WorderDocument } from "@/core/ast/types";
+
 export type CleanMode = "clean" | "structure";
 
 export type ProtectedSegmentKind = "text" | "code" | "math";
@@ -15,11 +17,21 @@ export interface CleanOptions {
 export interface CleanResult {
   markdown: string;
   plainText: string;
+  document: WorderDocument;
   warnings: string[];
 }
 
-export interface Slide {
-  title: string;
-  bullets: string[];
-  speakerNotes?: string;
-}
+export type { Slide } from "@/features/ppter/types";
+
+export type {
+  CodeBlockNode,
+  DocumentNode,
+  FormulaNode,
+  HeadingNode,
+  ListItemNode,
+  ListNode,
+  ParagraphNode,
+  QuoteNode,
+  TableNode,
+  WorderDocument
+} from "@/core/ast/types";

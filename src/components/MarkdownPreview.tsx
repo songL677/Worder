@@ -15,7 +15,7 @@ export function MarkdownPreview({ markdown }: MarkdownPreviewProps) {
     <div className="preview-document prose prose-neutral max-w-none prose-headings:scroll-mt-8 prose-headings:font-semibold prose-a:text-steel prose-pre:shadow-sm">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex, rehypeHighlight]}
+        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }], rehypeHighlight]}
       >
         {markdown || "整理后的内容会显示在这里。"}
       </ReactMarkdown>
