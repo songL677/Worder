@@ -14,6 +14,88 @@ Worder 是一个面向大语言模型内容整理的本地 Web 工具。它不�
 - 导出 `.pdf`
 - 子功能 `ppter`：将整理后的内容转换为 slide 结构，并导出 `.pptx`
 
+## 可视化界面
+
+Worder 当前界面是一个本地可视化工作台，包含：
+
+- 顶部流程条：展示“粘贴输入 -> 清洗/智能整理 -> 实时预览 -> 多格式导出”
+- 文档统计卡片：显示标题、列表项、表格、代码块、公式和 ppter slides 数量
+- 原始输入区：用于粘贴大模型输出，支持一键载入示例和清空
+- 实时预览区：渲染整理后的 Markdown、表格、代码块和 KaTeX 公式
+- 文档画像：用进度条展示结构化程度和可展示内容比例
+- 导出中心：导出 Word、PDF 或通过 ppter 导出 PPTX
+- ppter slide 结构：实时展示整理后内容会被拆成哪些演示页
+
+## 当前本地服务器
+
+本机当前开发服务器运行在：
+
+```text
+http://127.0.0.1:3001
+```
+
+浏览器打开这个地址即可使用 Worder。使用流程：
+
+1. 把 ChatGPT、Gemini、Claude、DeepSeek 等模型输出粘贴到左侧“原始输入”。
+2. 在右上角选择“清洗”或“智能整理”。
+3. 在中间查看实时预览，确认标题、表格、代码块和公式正常。
+4. 点击“纯文本 / Markdown / 富文本”复制内容。
+5. 点击“导出 Word / 导出 PDF / ppter 导出 PPTX”下载文件。
+
+如果服务器停止了，可以重新启动：
+
+```bash
+cd /Users/song/Documents/ppter/worder
+npm run dev -- --hostname 127.0.0.1 --port 3001
+```
+
+停止服务器：回到运行 `npm run dev` 的终端，按 `Ctrl + C`。
+
+## 下载与运行方式
+
+当前 Worder v0.1.0 是本地 Web MVP，已经可以在 Windows 和 macOS 上通过本地服务器运行。桌面 `.exe` / `.dmg` 安装包还没有正式发布；在桌面安装包完成前，请使用下面方式运行。
+
+### Windows
+
+1. 安装 Node.js LTS。
+2. 下载源码：<https://github.com/songL677/Worder/archive/refs/heads/main.zip>
+3. 解压后在 PowerShell 中进入项目目录：
+
+```powershell
+cd Worder-main
+npm install
+npm run dev -- --hostname 127.0.0.1 --port 3001
+```
+
+4. 浏览器打开：
+
+```text
+http://127.0.0.1:3001
+```
+
+### macOS
+
+1. 安装 Node.js LTS，或使用 Homebrew：
+
+```bash
+brew install node
+```
+
+2. 下载源码：<https://github.com/songL677/Worder/archive/refs/heads/main.zip>
+3. 解压后在终端进入项目目录：
+
+```bash
+cd Worder-main
+npm install
+npm run dev -- --hostname 127.0.0.1 --port 3001
+```
+
+4. 浏览器打开：
+
+```text
+http://127.0.0.1:3001
+```
+
 ## 技术栈
 
 - Next.js + React + TypeScript：适合快速构建本地可运行的交互式文档工具
